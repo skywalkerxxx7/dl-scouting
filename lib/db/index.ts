@@ -4,7 +4,15 @@ import * as schema from './schema'
 
 const globalForDb = globalThis as unknown as { pool?: Pool }
 
-export const pool = globalForDb.pool ?? new Pool({ connectionString: process.env.DATABASE_URL })
+function withVerifiedSsl(url: string | undefined) {
+  if (!url) return url
+  const parsed = new URL(url)
+  parsed.searchParams.set('sslmode', 'verify-full')
+  return parsed.toString()
+}
+
+export const pool =
+  globalForDb.pool ?? new Pool({ connectionString: withVerifiedSsl(process.env.DATABASE_URL) })
 if (process.env.NODE_ENV !== 'production') globalForDb.pool = pool
 
 export const db = drizzle(pool, { schema })
